@@ -1,0 +1,6 @@
+*.o
+nasmhttp
+certs/
+server.pid
+public/
+
