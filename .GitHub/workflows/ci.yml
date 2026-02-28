@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm openssl libssl-dev
+
+      - name: Generate self-signed certificate
+        run: |
+          mkdir -p certs
+          openssl req -x509 -newkey rsa:4096 \
+            -keyout certs/key.pem \
+            -out certs/cert.pem \
+            -days 365 -nodes \
+            -subj "/CN=localhost"
+
+      - name: Build
+        run: make
+
+      - name: Create public directory with test file
+        run: |
+          mkdir -p public
+          echo '{"static":"file"}' > public/test.json
+          echo '<html><body>hello</body></html>' > public/index.html
+
+      - name: Start server
+        run: |
+          ./nasmhttp &
+          echo $! > server.pid
+
+      - name: Wait for server to be ready
+        run: sleep 3
+
+      - name: Run tests
+        run: bash tests/test.sh
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+          fi
+          pkill nasmhttp || true
+          
