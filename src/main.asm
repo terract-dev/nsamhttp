@@ -10,14 +10,15 @@ extern graceful_shutdown
 
 section .data
     msg_start   db "nasmhttp v0.1.0 starting...", 0x0A, 0
-    msg_start_len equ $ - msg_start
+    msg_start_len equ $ - msg_start - 1
     msg_ready   db "Server ready on port 8443", 0x0A, 0
-    msg_ready_len equ $ - msg_ready
+    msg_ready_len equ $ - msg_ready - 1
     msg_shutdown db "Shutting down...", 0x0A, 0
-    msg_shutdown_len equ $ - msg_shutdown
-
-    port        dw 8443
-    backlog     dd 128
+    msg_shutdown_len equ $ - msg_shutdown - 1
+    err_socket  db "ERROR: socket_init failed", 0x0A, 0
+    err_socket_len equ $ - err_socket - 1
+    err_tls     db "ERROR: tls_init failed", 0x0A, 0
+    err_tls_len equ $ - err_tls - 1
 
 section .bss
     server_fd   resq 1
@@ -39,7 +40,7 @@ _start:
     ; Initialize socket
     call socket_init
     test rax, rax
-    js .error
+    js .err_socket
 
     mov [server_fd], rax
 
@@ -47,7 +48,7 @@ _start:
     mov rdi, rax
     call tls_init
     test rax, rax
-    js .error
+    js .err_tls
 
     mov [tls_ctx], rax
 
@@ -77,6 +78,26 @@ _start:
     ; Exit 0
     mov rax, 60
     xor rdi, rdi
+    syscall
+
+.err_socket:
+    mov rax, 1
+    mov rdi, 2
+    mov rsi, err_socket
+    mov rdx, err_socket_len
+    syscall
+    mov rax, 60
+    mov rdi, 1
+    syscall
+
+.err_tls:
+    mov rax, 1
+    mov rdi, 2
+    mov rsi, err_tls
+    mov rdx, err_tls_len
+    syscall
+    mov rax, 60
+    mov rdi, 1
     syscall
 
 .error:
