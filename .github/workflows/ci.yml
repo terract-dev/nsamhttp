@@ -43,7 +43,13 @@ jobs:
           echo $! > server.pid
 
       - name: Wait for server to be ready
-        run: sleep 3
+        run: |
+          sleep 3
+          if ! kill -0 $(cat server.pid) 2>/dev/null; then
+            echo "Server crashed on startup"
+            exit 1
+          fi
+          echo "Server is running (pid $(cat server.pid))"
 
       - name: Run tests
         run: bash tests/test.sh
