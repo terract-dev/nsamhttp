@@ -26,6 +26,9 @@ section .bss
 section .text
 
 _start:
+    ; Align stack to 16 bytes (required for C ABI / OpenSSL calls)
+    and rsp, ~0xF
+
     ; Print startup message
     mov rax, 1
     mov rdi, 1
@@ -81,4 +84,3 @@ _start:
     mov rax, 60
     mov rdi, 1
     syscall
-
