@@ -38,10 +38,6 @@ extern static_serve
 
 %define READ_BUF_SIZE   8192
 
-%define SYS_FORK        57
-%define SYS_WAIT4       61
-%define SYS_EXIT        60
-
 section .data
     err_read    db "Error: failed to read request", 0x0A, 0
     err_read_len equ $ - err_read
@@ -267,31 +263,12 @@ server_loop:
     js .accept_loop         ; retry on error
     mov r13, rax            ; client fd
 
-    ; fork to handle connection
-    mov rax, SYS_FORK
-    syscall
-
-    test rax, rax
-    jz .child               ; child process
-    js .accept_loop         ; fork error, retry
-
-    ; parent: close client fd and continue
-    mov rdi, r13
-    call socket_close
-    jmp .accept_loop
-
-.child:
-    ; child process: handle the connection
-    ; close server fd
-    mov rdi, rbx
-    call socket_close
-
     ; TLS handshake
     mov rdi, r13
     mov rsi, r12
     call tls_accept
     test rax, rax
-    js .child_done
+    js .close_client
     push rax                ; save SSL*
 
     ; read request
@@ -300,49 +277,44 @@ server_loop:
     mov rdx, READ_BUF_SIZE
     call tls_read
     test rax, rax
-    jle .child_tls_close
-    mov r13, rax            ; bytes read
+    jle .tls_close
+    mov r15, rax            ; bytes read
 
     ; parse request
     lea rdi, [read_buf]
-    mov rsi, r13
+    mov rsi, r15
     call http_parse_request
     test rax, rax
-    jz .child_bad_request
+    jz .bad_request
     push rax                ; save req struct
 
-    ; get method
+    ; get method and dispatch
     mov rdi, rax
     call http_get_method
     mov rdi, rax
     call method_identify
-    mov r13, rax            ; method constant
+    mov r15, rax            ; method constant
 
-    ; dispatch
-    mov rdi, [rsp+8]        ; ssl (below req)
+    mov rdi, [rsp+8]        ; ssl
     mov rsi, [rsp]          ; req
-    mov rdx, r13
+    mov rdx, r15
     call router_dispatch
-    jmp .child_tls_close
+    jmp .tls_close
 
-.child_bad_request:
-    mov rdi, [rsp]          ; ssl
+.bad_request:
+    mov rdi, [rsp]
     call response_400
 
-.child_tls_close:
-    pop rax                 ; req or ssl depending on path
+.tls_close:
+    pop rax                 ; req
     pop rax                 ; ssl
     mov rdi, rax
     call tls_close
 
-.child_done:
+.close_client:
     mov rdi, r13
     call socket_close
-
-    ; exit child
-    mov rax, SYS_EXIT
-    xor rdi, rdi
-    syscall
+    jmp .accept_loop
 
 .shutdown:
     pop r13
