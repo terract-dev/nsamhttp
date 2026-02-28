@@ -85,8 +85,8 @@ socket_init:
     ; build sockaddr_in
     ; sin_family = AF_INET (2)
     mov word [sockaddr], AF_INET
-    ; sin_port = htons(8443) = 0xF320 (big-endian)
-    mov word [sockaddr+2], 0x2021
+    ; sin_port = htons(8443) = 0xFB20 (big-endian)
+    mov word [sockaddr+2], 0xFB20
     ; sin_addr = INADDR_ANY = 0
     mov dword [sockaddr+4], 0
     ; pad
@@ -188,4 +188,3 @@ socket_close:
 
     pop rbp
     ret
-    
