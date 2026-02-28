@@ -31,17 +31,17 @@ global http_get_body
 %define HDR_VAL_OFF     8
 %define HDR_ENTRY_SIZE  16
 
+cr              equ 0x0D
+lf              equ 0x0A
+sp              equ 0x20
+colon           equ 0x3A
+
 section .data
     method_get      db "GET", 0
     method_post     db "POST", 0
     method_put      db "PUT", 0
     method_delete   db "DELETE", 0
     method_patch    db "PATCH", 0
-
-    cr              equ 0x0D
-    lf              equ 0x0A
-    sp              equ 0x20
-    colon           equ 0x3A
 
 section .bss
     ; parsed request struct
@@ -377,4 +377,3 @@ http_get_header:
     mov rax, 1
     pop rcx
     ret
-  
