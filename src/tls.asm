@@ -9,8 +9,6 @@ global tls_write
 global tls_close
 global tls_cleanup
 
-extern SSL_library_init
-extern SSL_load_error_strings
 extern TLS_server_method
 extern SSL_CTX_new
 extern SSL_CTX_use_certificate_file
@@ -57,12 +55,6 @@ tls_init:
     push rbp
     mov rbp, rsp
     push rbx
-
-    ; SSL_library_init()
-    call SSL_library_init
-
-    ; SSL_load_error_strings()
-    call SSL_load_error_strings
 
     ; method = TLS_server_method()
     call TLS_server_method
@@ -274,4 +266,3 @@ tls_cleanup:
 
     pop rbp
     ret
-
