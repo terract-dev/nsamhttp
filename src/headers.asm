@@ -53,36 +53,36 @@ headers_content_type:
 
     ; check json
     mov rsi, ext_json
-    call .streq
-    test rax, rax
+    call hdr_streq
+    
     jnz .ret_json
 
     ; check html
     mov rdi, rbx
     mov rsi, ext_html
-    call .streq
-    test rax, rax
+    call hdr_streq
+    
     jnz .ret_html
 
     ; check css
     mov rdi, rbx
     mov rsi, ext_css
-    call .streq
-    test rax, rax
+    call hdr_streq
+    
     jnz .ret_css
 
     ; check js
     mov rdi, rbx
     mov rsi, ext_js
-    call .streq
-    test rax, rax
+    call hdr_streq
+    
     jnz .ret_js
 
     ; check plain/txt
     mov rdi, rbx
     mov rsi, ext_txt
-    call .streq
-    test rax, rax
+    call hdr_streq
+    
     jnz .ret_plain
 
     ; default octet-stream
@@ -116,23 +116,23 @@ headers_content_type:
     ret
 
 ; streq utility
-.streq:
+hdr_streq:
     push rcx
-.se_loop:
+hdr_se_loop:
     mov al, [rdi]
     mov cl, [rsi]
     cmp al, cl
-    jne .se_ne
+    jne hdr_se_ne
     test al, al
-    jz .se_eq
+    jz hdr_se_eq
     inc rdi
     inc rsi
-    jmp .se_loop
-.se_eq:
+    jmp hdr_se_loop
+hdr_se_eq:
     mov rax, 1
     pop rcx
     ret
-.se_ne:
+hdr_se_ne:
     xor rax, rax
     pop rcx
     ret
@@ -154,7 +154,7 @@ headers_add:
     ; copy name
     mov rdi, r9
     mov rsi, rbx
-    call .strcpy
+    call hdr_strcpy
     add r8, rax
     lea r9, [hdr_buf + r8]
 
@@ -167,7 +167,7 @@ headers_add:
     ; copy value
     mov rdi, r9
     mov rsi, r12
-    call .strcpy
+    call hdr_strcpy
     add r8, rax
     lea r9, [hdr_buf + r8]
 
@@ -216,7 +216,7 @@ headers_build_response_headers:
     ; convert r12 to string
     mov rax, r12
     lea rsi, [cl_num_buf]
-    call .uint_to_str
+    call hdr_uint_to_str
     ; null terminate
     mov byte [rsi + rax], 0
     mov rdi, hdr_name_cl
@@ -253,17 +253,17 @@ headers_build_response_headers:
 ; strcpy - copy null terminated string, return length
 ; rdi = dst, rsi = src
 ; returns: rax = bytes copied (not including null)
-.strcpy:
+hdr_strcpy:
     push rcx
     xor rcx, rcx
-.sc_loop:
+hdr_sc_loop:
     mov al, [rsi + rcx]
     mov [rdi + rcx], al
     test al, al
-    jz .sc_done
+    jz hdr_sc_done
     inc rcx
-    jmp .sc_loop
-.sc_done:
+    jmp hdr_sc_loop
+hdr_sc_done:
     mov rax, rcx
     pop rcx
     ret
@@ -271,7 +271,7 @@ headers_build_response_headers:
 ; uint_to_str
 ; rax = number, rsi = output buf
 ; returns: rax = length
-.uint_to_str:
+hdr_uint_to_str:
     push rbx
     push rcx
     push rdx
@@ -282,8 +282,8 @@ headers_build_response_headers:
     mov r8, 10
     xor rcx, rcx
 
-    test rax, rax
-    jnz .uts_loop
+    
+    jnz hdr_uts_loop
     mov byte [rsi], '0'
     mov rax, 1
     pop r9
@@ -293,9 +293,9 @@ headers_build_response_headers:
     pop rbx
     ret
 
-.uts_loop:
-    test rax, rax
-    jz .uts_rev
+hdr_uts_loop:
+    
+    jz hdr_uts_rev
     xor rdx, rdx
     div r8
     add dl, '0'
@@ -303,13 +303,13 @@ headers_build_response_headers:
     inc rcx
     jmp .uts_loop
 
-.uts_rev:
+hdr_uts_rev:
     mov r8, rcx
-.uts_rl:
+hdr_uts_rl:
     pop rdx
     mov [rsi], dl
     inc rsi
-    loop .uts_rl
+    loop hdr_uts_rl
     mov rax, r8
 
     pop r9
