@@ -282,7 +282,7 @@ hdr_uint_to_str:
     mov r8, 10
     xor rcx, rcx
 
-    
+    test rax, rax
     jnz hdr_uts_loop
     mov byte [rsi], '0'
     mov rax, 1
@@ -294,14 +294,14 @@ hdr_uint_to_str:
     ret
 
 hdr_uts_loop:
-    
+    test rax, rax
     jz hdr_uts_rev
     xor rdx, rdx
     div r8
     add dl, '0'
     push rdx
     inc rcx
-    jmp .uts_loop
+    jmp hdr_uts_loop
 
 hdr_uts_rev:
     mov r8, rcx
