@@ -39,17 +39,26 @@ jobs:
 
       - name: Start server
         run: |
-          ./nasmhttp &
+          ulimit -c unlimited
+          ./nasmhttp > server.log 2>&1 &
           echo $! > server.pid
+          echo "Started with PID $(cat server.pid)"
 
       - name: Wait for server to be ready
         run: |
           sleep 3
+          echo "=== Server log ==="
+          cat server.log || echo "(empty)"
+          echo "=== Cert check ==="
+          ls -la certs/
+          echo "=== Process check ==="
+          ps aux | grep nasmhttp || true
           if ! kill -0 $(cat server.pid) 2>/dev/null; then
-            echo "Server crashed on startup"
+            echo "Server crashed - checking coredump"
+            ls -la core* 2>/dev/null || echo "no core"
             exit 1
           fi
-          echo "Server is running (pid $(cat server.pid))"
+          echo "Server is running"
 
       - name: Run tests
         run: bash tests/test.sh
