@@ -33,7 +33,7 @@ global http_get_body
 
 cr              equ 0x0D
 lf              equ 0x0A
-sp              equ 0x20
+ch_sp           equ 0x20
 colon           equ 0x3A
 
 section .data
@@ -147,7 +147,7 @@ http_parse_request:
     lea r14, [rax+1]        ; skip colon
 
     ; skip optional space
-    cmp byte [r14], sp
+    cmp byte [r14], ch_sp
     jne .no_space
     inc r14
 .no_space:
@@ -215,7 +215,7 @@ http_parse_request:
     push rcx
     mov rcx, rsi
 .fs_loop:
-    cmp byte [rdi], sp
+    cmp byte [rdi], ch_sp
     je .fs_found
     inc rdi
     loop .fs_loop
